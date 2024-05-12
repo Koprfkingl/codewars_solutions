@@ -17,7 +17,6 @@ from tqdm import tqdm
 
 import config
 from config import ENV
-from config import USER_URL
 from config import setup_logging
 
 urllib3.disable_warnings()
@@ -37,6 +36,7 @@ class Kata:
     code: str = ''
     description: str = ''
     uploaded: bool = False
+    completed_by: str = ''
 
     def __post_init__(self):
         # parse
@@ -71,6 +71,7 @@ class CodewarsAgent:
         self.completed_katas = []
         self.uploaded_katas = set()
         log.debug('Codewars agent prepared')
+        self.username = self.get_username()
 
     @staticmethod
     def _parse_cookie_env(raw_cookie: str) -> dict:
@@ -82,11 +83,22 @@ class CodewarsAgent:
             for key, morsel in cookie.items()
         })
 
-    def get_user_data(self, url: str) -> dict:
+    def get_username(self):
+        """Parse logged-in users' username."""
+        log.debug('getting username')
+        r = self.session.get('http://www.codewars.com/dashboard')
+        user_image = r.html.find('.profile-pic img')[0]
+        username = user_image.attrs['alt'].split()[0]
+        return username
+
+    def get_user_data(self) -> dict:
         """Fetch user info json from public API."""
         log.debug('getting user data')
+        url = fr"{ENV['API_URL']}users/{self.username}"
         r = self.session.get(url, verify=False)
-        return r.json()
+        data = r.json()
+        self.user_full_name = data['name']
+        return data
 
     @staticmethod
     def parse_user_info(user_data: dict) -> str:
@@ -103,7 +115,7 @@ class CodewarsAgent:
         Save it internally for later use.
         """
         log.debug('loading katas data')
-        url = fr"{USER_URL}/code-challenges/completed"
+        url = fr"{ENV['API_URL']}users/{self.username}/code-challenges/completed"
 
         self.completed_katas = []
 
@@ -152,6 +164,7 @@ class CodewarsAgent:
 
     def create_kata_obj(self, kata_data: dict) -> Kata:
         """Create kata instance from api and parsed data."""
+        kata_data['completed_by'] = self.user_full_name
         kata = Kata(**kata_data)
         kata.description, kata.code = self.get_kata_data(kata.id)
         return kata
@@ -174,7 +187,7 @@ def main():
     # prepare online agent
     cw = CodewarsAgent()
 
-    user_data = cw.get_user_data(USER_URL)
+    user_data = cw.get_user_data()
     log.info(cw.parse_user_info(user_data))
 
     # load completed katas info from public api

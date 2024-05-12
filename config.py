@@ -11,9 +11,6 @@ ENV = {
     **os.environ,  # override loaded values with environment variables
 }
 
-# urls
-USER_URL = fr"{ENV['API_URL']}users/{ENV['CW_USERNAME']}"
-
 CURRENT_DIR = Path.cwd()
 LOGS_DIR = CURRENT_DIR / 'logs'
 OUTPUT_DIR = CURRENT_DIR / 'output'
@@ -23,7 +20,7 @@ KATA_TEMPLATE_STR = """\
 \"\"\"Kata - {name}
 
 completed at: {completed_at:%Y-%m-%d %H:%M:%S}
-by: Jakub Červinka
+by: {completed_by}
 
 {description}
 \"\"\"
