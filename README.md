@@ -5,7 +5,6 @@ Scrape your finished katas to files and upload them to a github repo.
 
 ### Local Installation
 
-- modify the `.env_public` file with your codewars username
 - create an `.env_secret` file with your codewars token
 
 Your token may be found when inspecting the request to the corewars site after login.
